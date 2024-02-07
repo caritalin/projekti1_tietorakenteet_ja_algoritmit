@@ -31,7 +31,7 @@ double evaluateOperation(double operand1, double operand2, const string& op) {
         return fmod(operand1, operand2);
     else if (op == "^")
         return pow(operand1, operand2);
-    else if (op == "v")
+    else if (op == "v") // Square root operation
         return sqrt(operand1);
     else {
         cerr << "Invalid operator: " << op << endl;
@@ -50,17 +50,24 @@ double evaluatePostFix(const string& expression) {
         if (isNumber(token)) { // If token is a number, push it onto the stack
             operands.push(stod(token));
         } else if (isOperator(token)) { // If token is an operator
-            if (operands.size() < 2) { // Ensure there are enough operands in the stack
+            if (operands.empty()) { // Ensure there are enough operands in the stack
                 cerr << "Invalid expression: insufficient operands for operator " << token << endl;
                 return NAN;
             }
-            // Pop the top two operands from the stack
-            double operand2 = operands.top();
+            // Pop the top operand from the stack
+            double operand = operands.top();
             operands.pop();
-            double operand1 = operands.top();
-            operands.pop();
-            // Evaluate the operation and push the result onto the stack
-            operands.push(evaluateOperation(operand1, operand2, token));
+            // If the operator is "v" (square root), we need only one operand
+            if (token == "v" && operands.empty()) {
+                operands.push(evaluateOperation(operand, 0, token));
+            } else if (operands.empty()) { // For other operators, ensure there is at least one operand
+                cerr << "Invalid expression: insufficient operands for operator " << token << endl;
+                return NAN;
+            } else { // If there are enough operands, perform the operation
+                double operand2 = operands.top();
+                operands.pop();
+                operands.push(evaluateOperation(operand2, operand, token));
+            }
         } else { // If token is neither a number nor an operator
             cerr << "Invalid token: " << token << endl;
             return NAN;
