@@ -7,7 +7,7 @@ using namespace std;
 
 // Function to check if a token is an operator
 bool isOperator(const string& token) {
-    return token == "+" || token == "-" || token == "*" || token == "/" || token == "%" || token == "^" || token == "v";
+    return token == "+" || token == "-" || token == "*" || token == "/" || token == "%" || token == "^" || token == "v" || token == "s" || token == "a" || token == "x";
 }
 
 bool isNumber(const string& token) {
@@ -33,7 +33,13 @@ double evaluateOperation(double operand1, double operand2, const string& op) {
         return pow(operand1, operand2);
     else if (op == "v") // Square root operation
         return sqrt(operand1);
-    else {
+    else if (op == "s") { // Sum operation
+        return operand1 + operand2;
+    } else if (op == "a") { // Average operation
+        return (operand1 + operand2) / 2.0;
+    } else if (op == "x") { // Exchange operation
+        return operand2; // Return the second operand (the top of the stack)
+    } else {
         cerr << "Invalid operator: " << op << endl;
         return NAN; // Not a number
     }
@@ -50,23 +56,37 @@ double evaluatePostFix(const string& expression) {
         if (isNumber(token)) { // If token is a number, push it onto the stack
             operands.push(stod(token));
         } else if (isOperator(token)) { // If token is an operator
-            if (operands.empty()) { // Ensure there are enough operands in the stack
-                cerr << "Invalid expression: insufficient operands for operator " << token << endl;
-                return NAN;
-            }
-            // Pop the top operand from the stack
-            double operand = operands.top();
-            operands.pop();
-            // If the operator is "v" (square root), we need only one operand
-            if (token == "v" && operands.empty()) {
-                operands.push(evaluateOperation(operand, 0, token));
-            } else if (operands.empty()) { // For other operators, ensure there is at least one operand
-                cerr << "Invalid expression: insufficient operands for operator " << token << endl;
-                return NAN;
-            } else { // If there are enough operands, perform the operation
+            if (token == "s" || token == "a") { // Handle sum and average operations differently
+                double sum = 0;
+                while (!operands.empty()) { // Iterate through all elements in the stack
+                    sum += operands.top(); // Add the top element to the sum
+                    operands.pop(); // Remove the top element
+                }
+                operands.push(sum); // Push the sum onto the stack
+            } else if (token == "x") { // If token is the "Vaihda" command
+                if (operands.size() < 2) { // Ensure there are enough operands in the stack
+                    cerr << "Invalid expression: insufficient operands for 'Vaihda' command" << endl;
+                    return NAN;
+                }
+                // Pop the top two operands from the stack and swap them
                 double operand2 = operands.top();
                 operands.pop();
-                operands.push(evaluateOperation(operand2, operand, token));
+                double operand1 = operands.top();
+                operands.pop();
+                operands.push(operand2);
+                operands.push(operand1);
+            } else { // If token is a regular operator
+                if (operands.size() < 2) { // Ensure there are enough operands in the stack
+                    cerr << "Invalid expression: insufficient operands for operator " << token << endl;
+                    return NAN;
+                }
+                // Pop the top two operands from the stack
+                double operand2 = operands.top();
+                operands.pop();
+                double operand1 = operands.top();
+                operands.pop();
+                // Evaluate the operation and push the result onto the stack
+                operands.push(evaluateOperation(operand1, operand2, token));
             }
         } else { // If token is neither a number nor an operator
             cerr << "Invalid token: " << token << endl;
